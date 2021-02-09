@@ -1,0 +1,26 @@
+{
+  "name": "@wogjs/adapter",
+  "version": "0.1.0",
+  "description": "Provides the basic interface for adapters.",
+  "main": "src/BaseAdapter.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wog-js/adapter.git"
+  },
+  "keywords": [
+    "wogjs",
+    "adapter"
+  ],
+  "author": "Axel Rindle <mail@axelrindle.de>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/wog-js/adapter/issues"
+  },
+  "homepage": "https://github.com/wog-js/adapter#readme",
+  "dependencies": {
+    "nanoid": "^3.1.20"
+  }
+}

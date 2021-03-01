@@ -1,127 +1,206 @@
-/* eslint-disable no-undef */
-/* eslint-disable getter-return */
-/* eslint-disable no-unused-vars */
 // Require modules
 const EventEmitter = require('events');
-const nanoid = require('nanoid/generate');
-
-/**
- * Throws an error indicating that a function has to be implemented by a sub class.
- */
-const unimplemented = () => {
-  throw new Error("Not implemented!");
-};
+const WebSocket = require('ws');
+const { idGen } = require('@wogjs/utils');
 
 /**
  * Describes an adapter for retrieving log entries.
  */
-module.exports = class BaseAdapter extends EventEmitter {
+class BaseAdapter extends EventEmitter {
 
-  /**
-   * Creates a new Adapter instance.
-   */
-  constructor({ logger, util }) {
-    super();
+	/** @param {import('../typings').AdapterConstructor} param0 */
+	constructor({ logger, storage }) {
+		super();
 
-    this.logger = logger.scope(this.name);
-    this.NANOID_ALPHABET = util.NANOID_ALPHABET;
-    
-    this.sockets = {};
-    this.watchMap = {};
-  }
+		/** @type {import('@wogjs/types').Logger} */
+		this._logger = logger.scope(this.name);
 
-  generateId() {
-    return nanoid(this.NANOID_ALPHABET, 10);
-  }
+		/** @type {import('@wogjs/types').Storage} */
+		this._storage = storage;
 
-  get name() {
-    return this.constructor.name;
-  }
+		/** @type {string[]} */
+		this._groups = [];
 
-  /**
-   * Indicates whether this adapter will emit events.
-   * @return {boolean} Whether events are supported.
-   */
-  supportsEvents() {
-    return true;
-  }
+		/** @type {import('../typings').AdapterEntry[]} */
+		this._entries = [];
 
-  /**
-   * Called when this adapter is no longer needed. Used to clean up
-   * resources or to close any connections.
-   */
-  dispose() {
-    /* Might be unused ;) */
-  }
+		/** @type {Object.<string, WebSocket>} */
+		this._sockets = {};
 
-  registerSocket(id, ws) {
-    this.sockets[id] = ws;
-  }
+		/** @type {Object.<string, import('../typings').AdapterEntry[]>} */
+		this._watched = {};
+	}
 
-  unregisterSocket(id) {
-    delete this.sockets[id];
-    delete this.watchMap[id];
-  }
+	/**
+	 * The internal adapter name.
+	 *
+	 * @type {string}
+	 */
+	get name() {
+		return this.constructor.name;
+	}
 
-  // -------------------------------
-  // INTERFACE
+	/**
+	 * Initializes this adapter instance.
+	 *
+	 * @param {object} options Optional options to consider when initializing.
+	 * @returns {Promise<void>}
+	 */
+	async init(options) {
+		this._options = options;
+	}
 
-  /**
-   * Initializes the adapter.
-   * @param {object} options The options for the adapter.
-   */
-  init(options) {
-    this.options = options;
-  }
+	/**
+	 * Called when this adapter is no longer needed. Used to clean up
+	 * resources or to close any connections.
+	 *
+	 * @returns {Promise<void>}
+	 */
+	async dispose() {
+		this._groups = [];
+		this._entries = [];
+		this._sockets = {};
+		this._watched = {};
+	}
 
-  /**
-   * Returns a list of all loaded file groups.
-   * @return {array} An array with the names of all file groups.
-   */
-  getGroups() {
-    unimplemented();
-  }
+	/**
+	 * Returns a list of actual file entries for a given group.
+	 *
+	 * @param {string} group The group name.
+	 * @returns {import('../typings').AdapterEntry[]}
+	 */
+	getEntries(group) {
+		return this._entries.filter(el => el.group === group);
+	}
 
-  /**
-   * Returns a list of file entries for a given group.
-   * @param {string} group The group name.
-   * @returns {array} An array with all file entries associated with the given group.
-   */
-  getEntries(group) {
-    unimplemented();
-  }
+	/**
+	 * Finds a specific entry by it's id.
+	 *
+	 * @param {string} id The unique id identifying an entry.
+	 * @returns {import('../typings').AdapterEntry}
+	 */
+	getEntry(id) {
+		return this._entries.find(el => el.id === id);
+	}
 
-  /**
-   * Finds a specific entry by it's id.
-   * @param  {string} id The unique id identifying an entry.
-   * @return {object|null|Promise} An object holding an entry's data (name, path, etc.).
-   *                               Using Promises is also allowed.
-   */
-  getEntry(id) {
-    unimplemented();
-  }
+	/**
+	 * Registers a WebSocket to be contacted in case of file watching events.
+	 *
+	 * @param {WebSocket} socket The socket to register.
+	 * @returns {Promise<string>} A string identifying the socket registration.
+	 */
+	async registerSocket(socket) {
+		/** @type {string} */
+		const id = await idGen();
 
-  /**
-   * Returns the contents for an entry.
-   * @param  {string} id The unique id identifying an entry.
-   * @param  {number} page Specifies the page to read the corresponding lines.
-   * @return {array|object} An array containing the log entries, where each element represents one line/log.
-   *                        Also supported is an object with additional information (size, dates, etc.).
-   */
-  getContents(id, page = 1) {
-    unimplemented();
-  }
+		this._socketHandlers = {
+			/**
+			 * @param {number} _code
+			 * @param {string} _reason
+			 */
+			close: (_code, _reason) => {
+				this.unregisterSocket(id);
+			},
 
-  /**
-   * Downloads the contents for the given entry as a file.
-   * @param  {Response} res The response object.
-   * @param  {string} id The entry id.
-   */
-  download(res, id) {
-    unimplemented();
-  }
+			/**
+			 * @param {WebSocket} socket
+			 * @param {string} data
+			 */
+			data: async (socket, data) => {
+				if (typeof data !== 'object') {
+					socket.send({ error: 'Invalid data received!' });
+				}
+				else {
+					try {
+						const options = JSON.parse(data);
+						const result = await this.handleSocketMessage(socket, options);
+						if (! result) {
+							socket.send({ error: `Invalid operation "${options.type}"!` });
+						}
+					} catch (error) {
+						socket.send({ error });
+					}
+				}
+			}
+		};
 
-  watchEntry(wsId, entryId) {
-    this.watchMap[wsId] = entryId;
-  }
+		socket.on('close', this._socketHandlers.close);
+		socket.on('message', this._socketHandlers.data);
+
+		this._sockets[id] = socket;
+		this._watched[id] = [];
+
+		return id;
+	}
+
+	/**
+	 * Unregisters a socket. It won't be contacted anymore.
+	 *
+	 * @param {string} id
+	 */
+	unregisterSocket(id) {
+		if (this._sockets.hasOwnProperty(id)) {
+			/** @type {WebSocket} */
+			const socket = this._sockets[id];
+			socket.removeListener('close', this._socketHandlers.close);
+			socket.removeListener('data', this._socketHandlers.data);
+
+			delete this._sockets[id];
+			delete this._watched[id];
+		}
+	}
+
+
+	/**
+	 * Indicates supported features.
+	 *
+	 * @returns {import('../typings').Supports}
+	 */
+	supports() {
+		throw new Error("Not implemented!");
+	}
+
+	/**
+	 * Returns an array with the names of all file groups.
+	 *
+	 * @returns {string[]}
+	 */
+	getGroups() {
+		throw new Error("Not implemented!");
+	}
+
+	/**
+	 * Calculates stats the given entry.
+	 *
+	 * @param {string} id The entry id.
+	 * @returns {Promise<import('../typings').EntryStats | null>}
+	 */
+	async getEntryStats(id) {
+		throw new Error("Not implemented!");
+	}
+
+	/**
+	 * Streams the contens of the given entry.
+	 *
+	 * @param {string} id The entry id.
+	 * @param {number} page Specifies the page to read the corresponding lines. Pass -1 to return everything.
+	 * @param {NodeJS.WriteStream} dest A writeable stream the contents will be piped to.
+	 */
+	stream(id, page, dest) {
+		throw new Error("Not implemented!");
+	}
+
+	/**
+	 * Handles messages received from WebSocket connections.
+	 *
+	 * @param {WebSocket} socket
+	 * @param {object} options
+	 * @returns {Promise<boolean>} Whether execution was successful.
+	 */
+	async handleSocketMessage(socket, options) {
+		throw new Error("Not implemented!");
+	}
+
 };
+
+module.exports = BaseAdapter;

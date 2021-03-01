@@ -22,7 +22,8 @@
   },
   "homepage": "https://github.com/wog-js/adapter#readme",
   "dependencies": {
-    "@wogjs/utils": "github:wog-js/utils"
+    "@wogjs/utils": "github:wog-js/utils",
+    "ws": "^7.4.3"
   },
   "devDependencies": {
     "@wogjs/types": "github:wog-js/types"

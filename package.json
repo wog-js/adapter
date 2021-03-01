@@ -21,6 +21,9 @@
   },
   "homepage": "https://github.com/wog-js/adapter#readme",
   "dependencies": {
-    "nanoid": "^3.1.20"
+    "@wogjs/utils": "github:wog-js/utils"
+  },
+  "devDependencies": {
+    "@wogjs/types": "github:wog-js/types"
   }
 }

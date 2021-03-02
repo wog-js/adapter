@@ -1,6 +1,5 @@
 // Require modules
 const EventEmitter = require('events');
-const WebSocket = require('ws');
 const { idGen } = require('@wogjs/utils');
 
 /**
@@ -24,7 +23,7 @@ class BaseAdapter extends EventEmitter {
 		/** @type {import('../typings').AdapterEntry[]} */
 		this._entries = [];
 
-		/** @type {Object.<string, WebSocket>} */
+		/** @type {Object.<string, import('ws')>} */
 		this._sockets = {};
 
 		/** @type {Object.<string, import('../typings').AdapterEntry[]>} */
@@ -86,7 +85,7 @@ class BaseAdapter extends EventEmitter {
 	/**
 	 * Registers a WebSocket to be contacted in case of file watching events.
 	 *
-	 * @param {WebSocket} socket The socket to register.
+	 * @param {import('ws')} socket The socket to register.
 	 * @returns {Promise<string>} A string identifying the socket registration.
 	 */
 	async registerSocket(socket) {
@@ -103,7 +102,7 @@ class BaseAdapter extends EventEmitter {
 			},
 
 			/**
-			 * @param {WebSocket} socket
+			 * @param {import('ws')} socket
 			 * @param {string} data
 			 */
 			data: async (socket, data) => {
@@ -140,7 +139,6 @@ class BaseAdapter extends EventEmitter {
 	 */
 	unregisterSocket(id) {
 		if (this._sockets.hasOwnProperty(id)) {
-			/** @type {WebSocket} */
 			const socket = this._sockets[id];
 			socket.removeListener('close', this._socketHandlers.close);
 			socket.removeListener('data', this._socketHandlers.data);
@@ -193,7 +191,7 @@ class BaseAdapter extends EventEmitter {
 	/**
 	 * Handles messages received from WebSocket connections.
 	 *
-	 * @param {WebSocket} socket
+	 * @param {import('ws')} socket
 	 * @param {object} options
 	 * @returns {Promise<boolean>} Whether execution was successful.
 	 */

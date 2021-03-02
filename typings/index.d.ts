@@ -4,6 +4,7 @@
 
 import { Logger, Storage } from '@wogjs/types';
 import WebSocket from 'ws';
+import BaseAdapter from './BaseAdapter';
 
 /**
  * Describes features an adapter supports.
@@ -52,3 +53,5 @@ export interface AdapterConstructor {
 	logger: Logger
 	storage: Storage
 }
+
+export type Adapter = BaseAdapter

@@ -5,7 +5,8 @@
   "main": "src/BaseAdapter.js",
   "types": "typings/index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+	"gen-types": "tsc src/*.js --declaration --allowJs --emitDeclarationOnly --esModuleInterop --outDir typings"
   },
   "repository": {
     "type": "git",
@@ -26,6 +27,8 @@
     "ws": "^7.4.3"
   },
   "devDependencies": {
-    "@wogjs/types": "github:wog-js/types"
+    "@types/ws": "^7.4.0",
+    "@wogjs/types": "github:wog-js/types",
+    "typescript": "^4.2.2"
   }
 }

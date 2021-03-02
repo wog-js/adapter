@@ -5,8 +5,6 @@ const { idGen } = require('@wogjs/utils');
 
 /**
  * Describes an adapter for retrieving log entries.
- *
- * @type {import('../typings').Adapter}
  */
 class BaseAdapter extends EventEmitter {
 

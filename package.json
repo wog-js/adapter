@@ -3,7 +3,6 @@
   "version": "0.1.0",
   "description": "Provides the basic interface for adapters.",
   "main": "src/BaseAdapter.js",
-  "types": "typings/index.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

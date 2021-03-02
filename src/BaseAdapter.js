@@ -63,6 +63,15 @@ class BaseAdapter extends EventEmitter {
 	}
 
 	/**
+	 * Returns an array with the names of all file groups.
+	 *
+	 * @returns {string[]}
+	 */
+	getGroups() {
+		return this._groups;
+	}
+
+	/**
 	 * Returns a list of actual file entries for a given group.
 	 *
 	 * @param {string} group The group name.
@@ -155,15 +164,6 @@ class BaseAdapter extends EventEmitter {
 	 * @returns {import('../typings').Supports}
 	 */
 	supports() {
-		throw new Error("Not implemented!");
-	}
-
-	/**
-	 * Returns an array with the names of all file groups.
-	 *
-	 * @returns {string[]}
-	 */
-	getGroups() {
 		throw new Error("Not implemented!");
 	}
 

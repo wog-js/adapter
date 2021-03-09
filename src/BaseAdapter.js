@@ -86,6 +86,22 @@ class BaseAdapter extends EventEmitter {
 		this._watched = {};
 	}
 
+	async _loadEntries() {
+		const definitions = require(this._getDefinitionsFile());
+
+		this._groups = Object.keys(definitions);
+		for (const group of this._groups) {
+			for (const path of group) {
+				/** @type {import('../typings').AdapterEntry} */
+				const newEntry = {
+					id: await idGen(),
+					group, path
+				};
+				this._entries.push(newEntry);
+			}
+		}
+	}
+
 	/**
 	 * Returns an array with the names of all file groups.
 	 *

@@ -40,6 +40,17 @@ class BaseAdapter extends EventEmitter {
 	}
 
 	/**
+	 * The absolute path to the file which holds the entry definitions.
+	 *
+	 * @param {boolean} absolute
+	 * @returns {string}
+	 */
+	_getDefinitionsFile(absolute = true) {
+		const relative = `entry-definitions/${this.name}.json`;
+		return absolute ? this._storage.getPath(relative) : relative;
+	}
+
+	/**
 	 * Initializes this adapter instance.
 	 *
 	 * @param {object} options Optional options to consider when initializing.
@@ -47,6 +58,19 @@ class BaseAdapter extends EventEmitter {
 	 */
 	async init(options) {
 		this._options = options;
+
+		// create default entry definitions file if it does not exist
+		try {
+			const defFile = this._getDefinitionsFile(false);
+			if (! await this._storage.isOfType( defFile, "file" )) {
+				const json = JSON.stringify(this.getDefaultEntryDefinition(), null, 4);
+				await this._storage.writeFile(defFile, json);
+			}
+		} catch (error) {
+			this._logger.error(`Failed to create a default entry definitions file at "${this._getDefinitionsFile()}"!`);
+		}
+
+		await this._loadEntries();
 	}
 
 	/**
@@ -164,6 +188,15 @@ class BaseAdapter extends EventEmitter {
 	 * @returns {import('../typings').Supports}
 	 */
 	supports() {
+		throw new Error("Not implemented!");
+	}
+
+	/**
+	 * Provides an object with default groups and entries.
+	 *
+	 * @returns {object}
+	 */
+	getDefaultEntryDefinition() {
 		throw new Error("Not implemented!");
 	}
 

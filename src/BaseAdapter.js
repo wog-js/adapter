@@ -172,8 +172,8 @@ class BaseAdapter extends EventEmitter {
 			}
 		};
 
-		socket.on('close', this._socketHandlers.close);
-		socket.on('message', this._socketHandlers.data);
+		socket.on('close', this._socketHandlers.close.bind(this));
+		socket.on('message', this._socketHandlers.data.bind(this));
 
 		this._sockets[id] = socket;
 		this._watched[id] = [];
